@@ -104,12 +104,12 @@ def hardCodedAlgo(data_train, target_train, data_test, target_test):
 def stretch():
     # Pulls from text file using numpy
     print("Stretch Reading from text file")
-    data = np.genfromtxt("test.txt", delimiter=" ", dtype="f")
+    data = np.genfromtxt("projects/ponder_01/test.txt", delimiter=" ", dtype="f")
     # result = re.sub('[^0-9]', '', data)
     print(data)
 
     # Pulls from text file using open
-    with open('test.txt', 'r') as file:
+    with open('projects/ponder_01/test.txt', 'r') as file:
         lines = file.read().split(' ')
         # non_decimal = re.compile(r'[^\d.]+')
         print(lines)
