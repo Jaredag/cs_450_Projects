@@ -16,23 +16,22 @@ from sklearn.naive_bayes import GaussianNB
 def iris_machine_learning_algo():
     iris = datasets.load_iris()
 
-    # Show the data (the attributes of each instance)
-    print(iris.data,"\n")
-
-    # Show the target values (in numeric format) of each instance
-    print(iris.target,"\n")
-
-    # Show the actual target names that correspond to each number
-    print(iris.target_names,"\n")
+    # # Show the data (the attributes of each instance)
+    # print(iris.data,"\n")
+    #
+    # # Show the target values (in numeric format) of each instance
+    # print(iris.target,"\n")
+    #
+    # # Show the actual target names that correspond to each number
+    # print(iris.target_names,"\n")
 
     # Split the dataset
     data_train, data_test, target_train, target_test = train_test_split(iris.data, iris.target, test_size=0.30)
-    """
-    print("Data Train\n",data_train,"\n")
+
+    # print("Data Train\n",data_train,"\n")
     print("Data Test\n",data_test,"\n")
     print("Target Train\n",target_train,"\n")
-    print("Target Test\n",target_test,"\n")
-    """
+    # print("Target Test\n",target_test,"\n")
 
     # Train the dataset and create a model
     classifier = GaussianNB()
@@ -73,10 +72,13 @@ class HardCodedModel:
 
     def predict(self, data_test):
         targets_predicted = []
-        for i in data_test:
-            targets_predicted.append(0)
+        for row in data_test:
+            targets_predicted.append(self.predict_one(row))
 
         return targets_predicted
+
+    def predict_one(self, row):
+        return 0
 
 
 def hardCodedAlgo(data_train, target_train, data_test, target_test):
