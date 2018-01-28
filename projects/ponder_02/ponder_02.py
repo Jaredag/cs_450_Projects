@@ -89,7 +89,7 @@ def run_test(data, target, classifier):
 def get_classifier():
 
     #classifier = GaussianNB()
-    classifier = KNNClassifier(3)
+    classifier = KNNClassifier(8)
     #classifier = KNeighborsClassifier(n_neighbors=3) # Existing Implementation
 
     return classifier
