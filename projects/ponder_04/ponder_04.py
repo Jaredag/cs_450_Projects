@@ -35,24 +35,25 @@ class DecisionTreeModel:
 
     def build_tree(self, node):
 
-        print("Recursive")
+        print("\nRecursive")
 
         if node == None:
             root = self.find_root()
-            print("Fired")
             self.build_tree(root)
         elif len(node.target_values) == 0:
             print("Died")
             return
         else:
-            length = len(node.branches)
-            print(length)
-            for u in range(length):
-                print("index",u)
+            print("Start", node.attribute, node.target_values, node.branches, node.child_nodes)
+            for u in range(len(node.branches)):
+                print("\nindex",u)
                 node_name = []
                 entropies = []
                 target_values = []
                 node_branches = []
+                children_nodes = []
+                node_attributes = []
+
                 for i in range(len(node.target_values)):
                     variety = []
                     for j in range(len(node.branches[u])):
@@ -61,8 +62,11 @@ class DecisionTreeModel:
                     unique = list(set(variety))
                     total_entropy = 0
                     branches_with_rows = []
+                    get_children = []
+                    attributes = []
                     print('variety', variety,"branch",node.branches[u])
                     for x in range(len(unique)):
+                        print("go")
                         classes = []
                         row_values = []
                         for y in range(len(variety)):
@@ -73,36 +77,47 @@ class DecisionTreeModel:
                         print('rows', row_values)
                         entropy = calculate_entropy(classes, len(node.branches[u]))
                         if entropy == 0:
-                            child_node = Node("", max(classes), [], [])
-                            branches_with_rows.append(child_node)
+                            child_node = Node("", max(classes), [], [], [])
+                            print("Created child",child_node, "Max classes",max(classes))
+                            get_children.append(child_node)
+                            branches_with_rows.append([])
+                            attributes.append([])
                         else:
                             branches_with_rows.append(row_values)
+                            attributes.append(unique[x])
                         total_entropy += entropy
-                    print("Total Entropy ", total_entropy, "\n")
-                    node_name.append(self.headers[i])
+                    print("Total Entropy ", total_entropy,"\n")
+
+                    node_name.append(self.headers[node.target_values[i]])
                     entropies.append(total_entropy)
                     node_branches.append(branches_with_rows)
+                    children_nodes.append(get_children)
+                    node_attributes.append(attributes)
 
                 val = np.min(entropies)
-                print(target_values,node.target_values)
                 n_name = ""
+                className = ""
                 branches = []
+                children = []
+                attrs = []
 
                 for e in range(len(entropies)):
                     if val == entropies[e]:
                         n_name = node_name[e]
                         branches = node_branches[e]
+                        children = children_nodes[e]
+                        attrs = node_attributes[e]
                     else:
                         target_values.append(node.target_values[e])
 
-                print(n_name, val, target_values, branches)
-                new_node = Node(n_name, "", target_values, branches)
-                arrayObj =[]
-                arrayObj.append(new_node)
-                node.branches[u] = arrayObj
-                print("\n",node.attribute, node.target_values, node.branches)
+                if len(branches) != 0:
+                    print("New Node",n_name, val, target_values, branches, children, attrs)
+                    new_node = Node(n_name, className, target_values, branches, children,attrs)
+                    node.child_nodes.append(new_node)
+                    node.branches[u] = []
+                    print(node.attribute, node.target_values, node.branches, node.child_nodes, node.attributeValue)
 
-                self.build_tree(new_node)
+                    self.build_tree(new_node)
 
     def predict(self, data_test):
 
@@ -118,6 +133,7 @@ class DecisionTreeModel:
         entropies = []
         target_values = []
         node_branches = []
+        node_attributes = []
 
         for i in range(0, cols):
             variety = []
@@ -127,6 +143,7 @@ class DecisionTreeModel:
             unique = list(set(variety))
             entropy = 0
             branches_with_rows = []
+            attributes = []
             for x in range(len(unique)):
                 classes = []
                 row_values = []
@@ -137,40 +154,44 @@ class DecisionTreeModel:
 
                 entropy += calculate_entropy(classes, rows)
                 branches_with_rows.append(row_values)
+                attributes.append(unique[x])
 
             print("Total Entropy ", entropy, "\n")
             node_name.append(self.headers[i])
             entropies.append(entropy)
             node_branches.append(branches_with_rows)
+            node_attributes.append(attributes)
 
         val = np.min(entropies)
-        root_name = "";
+        root_name = ""
         branches = []
+        attrs = []
 
         for e in range(len(entropies)):
             if val == entropies[e]:
                 root_name = node_name[e]
                 branches = node_branches[e]
+                attrs = node_attributes[e]
             else:
                 target_values.append(e)
 
-        print(root_name, val, target_values, branches)
-        print(len(target_values))
-        self.root = Node(root_name, "",target_values, branches)
-        node = Node(root_name, "", target_values, branches)
+        print(root_name, val, target_values, branches, attrs)
+        self.root = Node(root_name, "",target_values, branches, [], attrs)
+        node = self.root
 
-        print(self.root.branches[0][3])
         return node
 
 
 # Individual Node
 class Node:
 
-    def __init__(self, attribute="", className="", target_values=[], branches=[]):
+    def __init__(self, attribute="", className="", target_values=[], branches=[], child_nodes=[], attributeValue=[]):
         self.attribute = attribute  # Attribute Name, ex. Income,
         self.className = className # Final leaf Name, ex. Yes or No
-        self.branches = branches      # Key: Branch Name, Value: Node
-        self.target_values = target_values   # Target Values, all rows for that attribute column
+        self.branches = branches      # Branch, all rows for that attribute column
+        self.target_values = target_values   # Target Values, the columns to evaluate Income, Collateral
+        self.child_nodes = child_nodes       # Nodes, connected to the this node
+        self.attributeValue = attributeValue # Incomes attributes, High or Low
 
 
 def run_test(data, target, headers, classifier):
@@ -205,6 +226,17 @@ def run_test(data, target, headers, classifier):
 
     # Only use on existing classifiers from the provided libraries, will not work on self-built classifiers
     #k_fold_cross_validation(classifier, data, target)
+
+
+def find_class(test_date, root):
+
+    if root.className != "":
+        return root.className
+
+    for i in range(test_date):
+        for e in range(len(root.attributeValue)):
+            if root.attributeValue[e] == test_date[i]:
+                return 1
 
 
 def k_fold_cross_validation(classifier, data, target):

@@ -97,7 +97,7 @@ def run_test(data, target, classifier):
     print("Percentage:",percentage,"% accurate\n")
 
     # Only use on existing classifiers from the provided libraries, will not work on self-built classifiers
-    k_fold_cross_validation(classifier, data, target)
+    #k_fold_cross_validation(classifier, data, target)
 
 
 def k_fold_cross_validation(classifier, data, target):
@@ -110,8 +110,8 @@ def k_fold_cross_validation(classifier, data, target):
 def get_classifier():
 
     # classifier = GaussianNB() # Existing Implementation
-    #classifier = KNNClassifier(8)
-    classifier = KNeighborsClassifier(n_neighbors=8) # Existing Implementation
+    classifier = KNNClassifier(8)
+    #classifier = KNeighborsClassifier(n_neighbors=8) # Existing Implementation
 
     return classifier
 
