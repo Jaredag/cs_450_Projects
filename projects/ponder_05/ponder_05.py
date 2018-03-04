@@ -12,26 +12,28 @@ from sklearn.model_selection import cross_val_score
 import random
 from sklearn.preprocessing import Imputer
 import math
+import matplotlib.pyplot as plt
+from sklearn.neural_network import MLPClassifier
 
 
 # DecisionTreeClassifier
 class NeuralNetClassifier:
 
-    def __init__(self, layers="", number_of_nodes= [], bias_input="", threshold=""):
+    def __init__(self, layers=0, number_of_nodes= [], bias_input=0,learning_rate=0.0):
         self.bias_input = bias_input
         self.number_of_nodes = number_of_nodes
-        self.threshold = threshold
+        self.learning_rate = learning_rate
         self.layers = layers
 
     def fit(self, data_train, targets_train, numberOfWeights, numberOfOutputs, classes):
 
-        return NeuralNetModel(self.layers,data_train,targets_train,self.number_of_nodes,numberOfWeights,self.bias_input,self.threshold,numberOfOutputs,classes)
+        return NeuralNetModel(self.layers,data_train,targets_train,self.number_of_nodes,numberOfWeights,self.bias_input,numberOfOutputs,classes,self.learning_rate)
 
 
 # DecisionTreeModel
 class NeuralNetModel:
 
-    def __init__(self, layers="",data_train=[],targets_train=[],numberOfNodes=[],numberOfWeights="",bias_input="",threshold="",numberOfOuputs=0,classes=[]):
+    def __init__(self, layers=0,data_train=[],targets_train=[],numberOfNodes=[],numberOfWeights=0,bias_input=0,numberOfOuputs=0,classes=[],learning_rate=0.0):
         self.layers = layers
         self.classes = classes
         self.numberOfOutputs = numberOfOuputs
@@ -40,8 +42,8 @@ class NeuralNetModel:
         self.numberOfNodes = numberOfNodes
         self.numberOfWeights = numberOfWeights
         self.bias_input = bias_input
-        self.threshold = threshold
         self.nodes = []
+        self.learning_rate = learning_rate
 
     def predict(self, data_test):
 
@@ -84,8 +86,9 @@ class NeuralNetModel:
         print("Rows:", rows)
 
         cols = self.data.shape[1]
-        print("Cols:", cols)
+        print("Cols:", cols,"\n")
 
+        # Feed Forward to find the activation values of the output nodes
         predictions = []
         for i in range(0, rows):
             inputs = []
@@ -93,8 +96,8 @@ class NeuralNetModel:
             for j in range(0, cols):
                 inputs.append(self.data[i][j])
 
-            maxActivation = 0;
-            predicted_node = 0;
+            maxActivation = 0
+            predicted_node = 0
             for k in range(self.layers + 1):
                 for t in range(len(self.nodes[k])):
                     if k == 0:
@@ -126,12 +129,80 @@ class NeuralNetModel:
                             if maxActivation == 0:
                                 maxActivation = activation
                                 predicted_node = t
-                            elif maxActivation < activation:
+                            elif maxActivation > activation:
                                 maxActivation = activation
                                 predicted_node = t
 
-            print("Predicted",self.classes[predicted_node],"Highest Activation",maxActivation,"\n")
+            print("Predicted",self.classes[predicted_node],"Answer",self.target[i],"Highest Activation",maxActivation,"\n")
+
             predictions.append(self.classes[predicted_node])
+
+            # Get the error rates for the nodes
+            if self.classes[predicted_node] != self.target[i]:
+                for k in range(self.layers, -1, -1):
+                    for t in range(len(self.nodes[k])):
+                        error = 0
+                        a = self.nodes[k][t].activation
+                        print("act",a,"k",k)
+                        if k == self.layers:
+                            #print("act", a, "k", k)
+                            # if t == predicted_node:
+                            #     print("t",self.target[i])
+                            #     error = a * (1 - a)* (a - self.target[i])
+                            # else:
+                            print("t",self.classes[t])
+                            error = a * (1 - a)* (a - self.classes[predicted_node])
+                        else:
+                            weightedSumBackwards = []
+                            for p in range(len(self.nodes[k + 1])):
+                                print("Error", self.nodes[k + 1][p].error,"*",self.nodes[k + 1][p].weights[t + 1])
+                                weightedSumBackwards.append((self.nodes[k + 1][p].error)*(self.nodes[k + 1][p].weights[t + 1]))
+
+                            weightedSumBackwards = sum(weightedSumBackwards)
+
+                            print("weightedSumBack",weightedSumBackwards)
+
+                            error = a * (1 - a)*(weightedSumBackwards)
+
+                        self.nodes[k][t].error = error
+
+                        print("    error",error)
+                print("\n")
+
+                # Update the weights
+                print("Update Weights")
+                for k in range(self.layers + 1):
+                    for t in range(len(self.nodes[k])):
+                        error = self.nodes[k][t].error
+                        rate = self.learning_rate
+                        if k == 0:
+                            #new_weight = w - (learning_rate)*(current_error)*(input or act previous node)
+                            print("Weights", self.nodes[k][t].weights)
+                            others = list(map(lambda y: ((rate) * (error) * (y)), inputs))
+                            print("ohters", others)
+                            print("Inputs", inputs)
+                            print("error",error)
+                            print("rate",rate)
+                            new_weights = list(map(lambda x, y: (x - ((rate) * (error) * (y))), self.nodes[k][t].weights, inputs))
+                            print("    New Weights", new_weights)
+                            self.nodes[k][t].weights = new_weights
+
+                        else:
+                            activation_inputs = []
+                            activation_inputs.append(self.bias_input)
+                            for n in range(len(self.nodes[k - 1])):
+                                activation_inputs.append(self.nodes[k - 1][n].activation)
+
+                            print("Weights", self.nodes[k][t].weights)
+                            others = list(map(lambda y: ((rate) * (error) * (y)), activation_inputs))
+                            print("ohters", others)
+                            print("Activation", activation_inputs)
+                            print("error", error)
+                            print("rate", rate)
+                            new_weights = list(map(lambda x, y: (x - ((rate) * (error) * (y))), self.nodes[k][t].weights, activation_inputs))
+                            print("    New Weights", new_weights)
+                            self.nodes[k][t].weights = new_weights
+                print("\n")
 
         return predictions
 
@@ -150,7 +221,8 @@ def run_test(data, target, classifier):
 
     cols = data.shape[1]
     print(cols)
-
+    data_train, data_test, target_train, target_test = train_test_split(data, target, test_size=0.30)
+    print(target_train)
     unique = list(set(target))
     print(unique)
     number_of_outputs = len(unique)
@@ -160,23 +232,34 @@ def run_test(data, target, classifier):
 
     model.create_layer()
 
-    weights = [-.2, .5, -.3]
-    inputs = [-1, .4, .2]
-    multiplied_list = map(lambda x, y: x * y, weights, inputs)
-    output = sum(multiplied_list)
-    print(output)
+    accuracy = []
+    x = []
+    for i in range(100):
+        targets_predicted = model.iterate_through_network()
 
-    activation = (1 / (1 + math.exp(- (output))))
+        print("Target Predicted\n", targets_predicted)
+        print("Target Test\n", target, "\n")
 
-    print(activation)
+        # Correct/percentage
+        correct = (targets_predicted == target).sum()
+        length = len(target)
+        percentage = (round(((correct / length) * 100), 2))
+        accuracy.append(percentage)
+        x.append(i)
+        print("Results")
+        print("Correct:", correct)
+        print("Out of:", correct, "/", length)
+        print("Percentage:", percentage, "% accurate\n")
 
-    targets_predicted = model.iterate_through_network()
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-5,
+                        hidden_layer_sizes=(2, 2), random_state=1)
 
-    print("Target Predicted\n", targets_predicted)
-    print("Target Test\n", target, "\n")
+    clf.fit(data_train, target_train)
+
+    targets_predic = clf.predict(data)
 
     # Correct/percentage
-    correct = (targets_predicted == target).sum()
+    correct = (targets_predic == target).sum()
     length = len(target)
     percentage = (round(((correct / length) * 100), 2))
     print("Results")
@@ -184,8 +267,9 @@ def run_test(data, target, classifier):
     print("Out of:", correct, "/", length)
     print("Percentage:", percentage, "% accurate\n")
 
-
-    # Send some data into predict from the tree
+    y = accuracy
+    plt.plot(x, y)
+    plt.show()
 
     # Split the dataset
     # data_train, data_test, target_train, target_test = train_test_split(data, target, test_size=0.30)
@@ -226,11 +310,11 @@ def get_classifier():
     layers = 2
     number_of_nodes = []
     number_of_nodes.append(2)
-    number_of_nodes.append(3)
+    number_of_nodes.append(2)
     bias_input = -1
-    threshold = 0
+    learning_rate = 0.1
 
-    classifier = NeuralNetClassifier(layers, number_of_nodes, bias_input, threshold)
+    classifier = NeuralNetClassifier(layers, number_of_nodes, bias_input, learning_rate)
 
     return classifier
 
@@ -330,8 +414,8 @@ def get_diabetes_dataset():
 def main():
 
     classifier = get_classifier()
-    #data, target = get_iris_dataset()
-    data, target = get_diabetes_dataset()
+    data, target = get_iris_dataset()
+    #data, target = get_diabetes_dataset()
     #data, target = get_loan_data()
     run_test(data, target, classifier)
 
