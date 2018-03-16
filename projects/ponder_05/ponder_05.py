@@ -234,7 +234,7 @@ def run_test(data, target, classifier):
 
     accuracy = []
     x = []
-    for i in range(100):
+    for i in range(50):
         targets_predicted = model.iterate_through_network()
 
         print("Target Predicted\n", targets_predicted)
@@ -307,9 +307,8 @@ def k_fold_cross_validation(classifier, data, target):
 def get_classifier():
     # inputs are determined by columns
     # outputs are determined by classes
-    layers = 2
+    layers = 1
     number_of_nodes = []
-    number_of_nodes.append(2)
     number_of_nodes.append(2)
     bias_input = -1
     learning_rate = 0.1
@@ -414,8 +413,8 @@ def get_diabetes_dataset():
 def main():
 
     classifier = get_classifier()
-    data, target = get_iris_dataset()
-    #data, target = get_diabetes_dataset()
+    #data, target = get_iris_dataset()
+    data, target = get_diabetes_dataset()
     #data, target = get_loan_data()
     run_test(data, target, classifier)
 
